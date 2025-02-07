@@ -58,8 +58,6 @@ MRStable_V <- function(beta_exp,
                                          iv.sig,
                                          dp,
                                          pi_thr2)
-  print(iv.sig)
-  print(iv.valid)
   .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion)
 }
 
