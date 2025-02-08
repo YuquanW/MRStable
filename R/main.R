@@ -48,7 +48,8 @@ MRStable_V <- function(beta_exp,
                        pi_thr2 = 0.4,
                        rd = 20,
                        dp = 20,
-                       over.dispersion = T) {
+                       over.dispersion.stg1 = T,
+                       over.dispersion.stg2 = F) {
   m <- length(beta_exp)
   iv.sig <- .stablility_selection_stg1(beta_exp,
                                        se_exp,
@@ -66,10 +67,10 @@ MRStable_V <- function(beta_exp,
   if (length(iv.valid)==0) {
 
     warning("No valid IVs were selected. Estimating causal effect with significant IVs.")
-    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1)
 
   } else {
-    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion)
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2)
   }
 }
 
