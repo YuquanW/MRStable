@@ -21,7 +21,7 @@ MRStable_V(
   se_exp,
   se_out,
   pi_thr1 = 0.6,
-  pi_thr2 = 0.5,
+  pi_thr2 = 0.4,
   rd = 20,
   dp = 20,
   over.dispersion = T
