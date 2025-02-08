@@ -27,6 +27,11 @@ MRStable <- function(beta_exp,
                                        se_exp,
                                        rd,
                                        pi_thr1)
+  if (length(iv.sig)==0) {
+    stop("No significant IVs were selected.")
+  } else if (length(iv.sig) <= 10) {
+    warning("The number of significant IVs is less than 10.")
+  }
   t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
@@ -58,6 +63,13 @@ MRStable_V <- function(beta_exp,
                                          iv.sig,
                                          dp,
                                          pi_thr2)
-  .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion)
+  if (length(iv.valid)==0) {
+
+    warning("No valid IVs were selected. Estimating causal effect with significant IVs.")
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
+
+  } else {
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion)
+  }
 }
 

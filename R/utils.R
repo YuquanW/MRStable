@@ -132,7 +132,6 @@
         }
       }
       alpha_lasso[, j] <- (alpha!=0)*1
-      #dnorm(beta_exp_dp, gamma, se_exp, log = T)) + log(n)*K)
     }
     invalid_set[, i] <- apply(alpha_lasso, 1, min)
   }
