@@ -45,11 +45,11 @@ MRStable_V <- function(beta_exp,
                        se_exp,
                        se_out,
                        pi_thr1 = 0.6,
-                       pi_thr2 = 0.6,
+                       pi_thr2 = 0.4,
                        rd = 20,
-                       dp = 100,
+                       dp = 50,
                        over.dispersion.stg1 = T,
-                       over.dispersion.stg2 = F) {
+                       over.dispersion.stg2 = T) {
   m <- length(beta_exp)
   iv.sig <- .stablility_selection_stg1(beta_exp,
                                        se_exp,
