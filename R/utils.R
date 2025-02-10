@@ -33,6 +33,48 @@
   beta_exp
 }
 
+.stablility_selection_stg2 <- function(beta_exp, beta_out, se_exp, se_out, sig_iv,
+                                       dp, pi_thr, maxiter = 500) {
+  m <- length(sig_iv)
+  n <- min(c(1/se_exp^2, 1/se_out^2))
+  beta_exp <- beta_exp[sig_iv]
+  beta_out <- beta_out[sig_iv]
+  se_exp <- se_exp[sig_iv]
+  se_out <- se_out[sig_iv]
+  valid_set <- matrix(NA, m, dp)
+  for (i in 1:dp) {
+    beta_exp_dp <- beta_exp + rnorm(m)*se_exp
+    beta_out_dp <- beta_out + rnorm(m)*se_out
+    K_vec <- ceiling(m/2):(m-1)
+    alpha_cml <- matrix(NA, m, length(K_vec))
+    bic <- NULL
+    for (k in 1:length(K_vec)) {
+      beta.hat <- 0
+      gamma <- rep(0, m)
+      for (j in 1:maxiter) {
+        beta.old <- beta.hat
+        Q <- (beta_out_dp - beta.old*gamma)^2/se_out^2
+        nonzero_index <- order(Q, decreasing = T)[1:K_vec[k]]
+        alpha <- rep(0, m)
+        alpha[nonzero_index] <- (beta_out_dp - beta.old*gamma)[nonzero_index]
+        gamma <- ((beta_out_dp - alpha)*beta.old/se_out^2+beta_exp_dp/se_exp^2)/
+          (beta.old^2/se_out^2+1/se_exp^2)
+        beta.hat <- sum((beta_out_dp - alpha)*gamma/se_out^2)/sum(gamma^2/se_out^2)
+        if (abs(beta.hat - beta.old)/abs(beta.old+1e-16) < 1e-7) {
+          break
+        }
+      }
+      #gamma[nonzero_index] <- beta_exp_dp[nonzero_index]
+      #alpha[nonzero_index] <- (beta_out_dp - beta.hat*gamma)[nonzero_index]
+      alpha_cml[, k] <- (alpha==0)*1
+      #bic <- c(bic, sum((beta_out_dp-beta.hat*gamma-alpha)^2/(se_out^2)+(beta_exp_dp-gamma)^2/(se_exp^2))+log(n)*K)#-2*sum(dnorm(beta_out_dp, beta.hat*gamma+alpha, se_out, log = T)+
+                             #dnorm(beta_exp_dp, gamma, se_exp, log = T)) + log(n)*K)
+    }
+    valid_set[, i] <- apply(alpha_cml, 1, max)#(alpha_cml[, which.min(bic)]!=0)*1
+  }
+  sig_iv[which(rowMeans(valid_set) > pi_thr)]
+}
+
 # .stablility_selection_stg2 <- function(beta_exp, beta_out, se_exp, se_out, sig_iv,
 #                                        dp, pi_thr, maxiter = 500) {
 #   m <- length(sig_iv)
@@ -42,101 +84,40 @@
 #   se_exp <- se_exp[sig_iv]
 #   se_out <- se_out[sig_iv]
 #   invalid_set <- matrix(NA, m, dp)
+#   nlam <- 10
+#   beta.ratio <- beta_out/beta_exp
+#   se.ratio <- sqrt(se_out^2/beta_exp^2+beta_out^2*se_exp^2/beta_exp^4)
+#   dens <- .hetero_kde(beta.ratio, se.ratio)
+#   beta.init <- dens$x[which.max(dens$y)]
+#
+#   lambda <- exp(seq(log(min(abs(beta_out-beta.init*beta_exp)/se_out^2)/n), log(quantile(abs(beta_out-beta.init*beta_exp)/se_out^2, 0.5)/n), length = nlam))
+#
 #   for (i in 1:dp) {
 #     beta_exp_dp <- beta_exp + rnorm(m)*se_exp
 #     beta_out_dp <- beta_out + rnorm(m)*se_out
-#     alpha_cml <- matrix(NA, m, m-1)
-#     bic <- NULL
-#     for (K in 1:(m-1)) {
-#       beta.hat <- 0
-#       gamma <- rep(0, m)
-#       for (j in 1:maxiter) {
+#     alpha_lasso <- matrix(NA, m, nlam)
+#     W <- runif(m, 0.5, 1)
+#     for (j in 1:nlam) {
+#       beta.hat <- beta.init
+#       gamma <- beta_exp_dp
+#       for (k in 1:maxiter) {
 #         beta.old <- beta.hat
-#         Q <- (beta_out_dp - beta.old*gamma)^2/se_out^2
-#         nonzero_index <- order(Q, decreasing = T)[1:K]
-#         alpha <- rep(0, m)
-#         alpha[nonzero_index] <- (beta_out_dp - beta.old*gamma)[nonzero_index]
+#         alpha <- (abs(beta_out_dp - beta.old*gamma) - n*lambda[j]*se_out^2/W)*
+#           sign(beta_out_dp - beta.old*gamma)*
+#           (abs(beta_out_dp - beta.old*gamma)>n*lambda[j]*se_out^2/W)
 #         gamma <- ((beta_out_dp - alpha)*beta.old/se_out^2+beta_exp_dp/se_exp^2)/
 #           (beta.old^2/se_out^2+1/se_exp^2)
 #         beta.hat <- sum((beta_out_dp - alpha)*gamma/se_out^2)/sum(gamma^2/se_out^2)
-#         if (abs(beta.hat - beta.old)/abs(beta.old+1e-16) < 1e-7) {
+#         if (abs(beta.hat - beta.old)/abs(beta.old+1e-16) < 1e-5) {
 #           break
 #         }
 #       }
-#       gamma[nonzero_index] <- beta_exp_dp[nonzero_index]
-#       alpha[nonzero_index] <- (beta_out_dp - beta.hat*gamma)[nonzero_index]
-#       alpha_cml[, K] <- alpha
-#       bic <- c(bic, sum((beta_out_dp-beta.hat*gamma-alpha)^2/(se_out^2)+(beta_exp_dp-gamma)^2/(se_exp^2))+log(n)*K)#-2*sum(dnorm(beta_out_dp, beta.hat*gamma+alpha, se_out, log = T)+
-#                              #dnorm(beta_exp_dp, gamma, se_exp, log = T)) + log(n)*K)
+#       alpha_lasso[, j] <- (alpha!=0)*1
 #     }
-#     invalid_set[, i] <- (alpha_cml[, which.min(bic)]!=0)*1
+#     invalid_set[, i] <- apply(alpha_lasso, 1, min)
 #   }
 #   sig_iv[which(rowMeans(invalid_set) < pi_thr)]
 # }
-#
-# .divw <- function(beta_exp, beta_out, se_exp, se_out, ind, over.dispersion) {
-#   beta.hat <- sum(beta_exp[ind] * beta_out[ind]/(se_out[ind])^2)/
-#     sum((beta_exp[ind]^2 - se_exp[ind]^2)/(se_out[ind])^2)
-#   se.ratio <- se_exp[ind]/se_out[ind]
-#   mu <- beta_exp[ind]/se_exp[ind]
-#   tau.square <- 0
-#   if (over.dispersion) {
-#     tau.square <- sum(((beta_out[ind] - beta.hat * beta_exp[ind])^2 - se_exp[ind]^2 - beta.hat^2 * se_exp[ind]^2)/se_out[ind]^2)/
-#       sum(se_out[ind]^(-2))
-#   }
-#   V1 <- sum(se.ratio^2 * mu^2 + beta.hat^2 * se.ratio^4 *
-#               (mu^2 + 1) + tau.square * se.ratio^2/se_out[ind]^2 *
-#               mu^2)
-#   V2 <- sum(se.ratio^2 * (mu^2 - 1))
-#   beta.var <- V1/V2^2
-#   beta.se <- sqrt(beta.var)
-#   list(beta.hat = beta.hat,
-#        beta.se = beta.se,
-#        beta.p.value = 2*pnorm(-abs(beta.hat)/beta.se))
-# }
-
-.stablility_selection_stg2 <- function(beta_exp, beta_out, se_exp, se_out, sig_iv,
-                                       dp, pi_thr, maxiter = 500) {
-  m <- length(sig_iv)
-  n <- min(c(1/se_exp^2, 1/se_out^2))
-  beta_exp <- beta_exp[sig_iv]
-  beta_out <- beta_out[sig_iv]
-  se_exp <- se_exp[sig_iv]
-  se_out <- se_out[sig_iv]
-  invalid_set <- matrix(NA, m, dp)
-  nlam <- 10
-  beta.ratio <- beta_out/beta_exp
-  se.ratio <- sqrt(se_out^2/beta_exp^2+beta_out^2*se_exp^2/beta_exp^4)
-  dens <- .hetero_kde(beta.ratio, se.ratio)
-  beta.init <- dens$x[which.max(dens$y)]
-
-  lambda <- exp(seq(log(min(abs(beta_out-beta.init*beta_exp)/se_out^2)/n), log(quantile(abs(beta_out-beta.init*beta_exp)/se_out^2, 0.5)/n), length = nlam))
-  for (i in 1:dp) {
-    beta_exp_dp <- beta_exp + rnorm(m)*se_exp
-    beta_out_dp <- beta_out + rnorm(m)*se_out
-    alpha_lasso <- matrix(NA, m, nlam)
-    W <- runif(m, 0.8, 1)
-    for (j in 1:nlam) {
-      beta.hat <- beta.init
-      gamma <- beta_exp_dp
-      for (k in 1:maxiter) {
-        beta.old <- beta.hat
-        alpha <- (abs(beta_out_dp - beta.old*gamma) - n*lambda[j]*se_out^2/W)*
-          sign(beta_out_dp - beta.old*gamma)*
-          (abs(beta_out_dp - beta.old*gamma)>n*lambda[j]*se_out^2/W)
-        gamma <- ((beta_out_dp - alpha)*beta.old/se_out^2+beta_exp_dp/se_exp^2)/
-          (beta.old^2/se_out^2+1/se_exp^2)
-        beta.hat <- sum((beta_out_dp - alpha)*gamma/se_out^2)/sum(gamma^2/se_out^2)
-        if (abs(beta.hat - beta.old)/abs(beta.old+1e-16) < 1e-5) {
-          break
-        }
-      }
-      alpha_lasso[, j] <- (alpha!=0)*1
-    }
-    invalid_set[, i] <- apply(alpha_lasso, 1, min)
-  }
-  sig_iv[which(rowMeans(invalid_set) < pi_thr)]
-}
 
 .divw <- function(beta_exp, beta_out, se_exp, se_out, ind, over.dispersion) {
   beta.hat <- sum(beta_exp[ind] * beta_out[ind]/(se_out[ind])^2)/
@@ -159,14 +140,14 @@
        beta.p.value = 2*pnorm(-abs(beta.hat)/beta.se))
 }
 
-.hetero_kde <- function(beta, se, res = 1000) {
-  x_eval <- seq(
-    min(beta) - 3 * max(se),
-    max(beta) + 3 * max(se),
-    length.out = res
-  )
-  dens <- sapply(x_eval, function(x) {
-    sum(dnorm(x, mean = beta, sd = se))
-  }) / length(beta)
-  list(x = x_eval, y = dens)
-}
+# .hetero_kde <- function(beta, se, res = 1000) {
+#   x_eval <- seq(
+#     min(beta) - 3 * max(se),
+#     max(beta) + 3 * max(se),
+#     length.out = res
+#   )
+#   dens <- sapply(x_eval, function(x) {
+#     sum(dnorm(x, mean = beta, sd = se))
+#   }) / length(beta)
+#   list(x = x_eval, y = dens)
+# }
