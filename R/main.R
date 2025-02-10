@@ -47,7 +47,7 @@ MRStable_V <- function(beta_exp,
                        pi_thr1 = 0.6,
                        pi_thr2 = 0.6,
                        rd = 20,
-                       dp = 20,
+                       dp = 100,
                        over.dispersion.stg1 = T,
                        over.dispersion.stg2 = F) {
   m <- length(beta_exp)

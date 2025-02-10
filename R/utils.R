@@ -5,7 +5,7 @@
   stab_sel <- matrix(NA, length(beta_exp), rd)
   for (i in 1:rd) {
     beta_exp_lasso <- matrix(NA, length(beta_exp), nlam)
-    W <- runif(length(beta_exp), 0.8, 1)
+    W <- runif(length(beta_exp), 0.5, 1)
     beta_exp_dp <- beta_exp + rnorm(length(beta_exp))*se_exp
     for (j in 1:nlam) {
       beta_exp_lasso[, j] <- (abs(beta_exp_dp)>n*lambda[j]*se_exp^2/W)*1
@@ -41,20 +41,21 @@
   beta_out <- beta_out[sig_iv]
   se_exp <- se_exp[sig_iv]
   se_out <- se_out[sig_iv]
+
   valid_set <- matrix(NA, m, dp)
   for (i in 1:dp) {
     beta_exp_dp <- beta_exp + rnorm(m)*se_exp
     beta_out_dp <- beta_out + rnorm(m)*se_out
-    K_vec <- ceiling(m/2):(m-1)
-    alpha_cml <- matrix(NA, m, length(K_vec))
-    bic <- NULL
-    for (k in 1:length(K_vec)) {
+    alpha_cml <- matrix(NA, m, m-1)
+    rbic <- NULL
+    W <- runif(m-1, 1, log(n)/2)
+    for (K in 1:(m-1)) {
       beta.hat <- 0
       gamma <- rep(0, m)
       for (j in 1:maxiter) {
         beta.old <- beta.hat
         Q <- (beta_out_dp - beta.old*gamma)^2/se_out^2
-        nonzero_index <- order(Q, decreasing = T)[1:K_vec[k]]
+        nonzero_index <- order(Q, decreasing = T)[1:K]
         alpha <- rep(0, m)
         alpha[nonzero_index] <- (beta_out_dp - beta.old*gamma)[nonzero_index]
         gamma <- ((beta_out_dp - alpha)*beta.old/se_out^2+beta_exp_dp/se_exp^2)/
@@ -64,13 +65,13 @@
           break
         }
       }
-      #gamma[nonzero_index] <- beta_exp_dp[nonzero_index]
-      #alpha[nonzero_index] <- (beta_out_dp - beta.hat*gamma)[nonzero_index]
-      alpha_cml[, k] <- (alpha==0)*1
-      #bic <- c(bic, sum((beta_out_dp-beta.hat*gamma-alpha)^2/(se_out^2)+(beta_exp_dp-gamma)^2/(se_exp^2))+log(n)*K)#-2*sum(dnorm(beta_out_dp, beta.hat*gamma+alpha, se_out, log = T)+
-                             #dnorm(beta_exp_dp, gamma, se_exp, log = T)) + log(n)*K)
+      gamma[nonzero_index] <- beta_exp_dp[nonzero_index]
+      alpha[nonzero_index] <- (beta_out_dp - beta.hat*gamma)[nonzero_index]
+      alpha_cml[, K] <- alpha
+      rbic <- c(rbic, sum((beta_out_dp - beta.hat*gamma - alpha)^2/se_out^2+
+                          (beta_exp_dp - gamma)^2/se_exp^2) + log(n)/W[K]*K)
     }
-    valid_set[, i] <- apply(alpha_cml, 1, max)#(alpha_cml[, which.min(bic)]!=0)*1
+    valid_set[, i] <- (alpha_cml[, which.min(rbic)]==0)*1
   }
   sig_iv[which(rowMeans(valid_set) > pi_thr)]
 }
@@ -86,10 +87,11 @@
 #   invalid_set <- matrix(NA, m, dp)
 #   nlam <- 10
 #   beta.ratio <- beta_out/beta_exp
-#   se.ratio <- sqrt(se_out^2/beta_exp^2+beta_out^2*se_exp^2/beta_exp^4)
-#   dens <- .hetero_kde(beta.ratio, se.ratio)
+#   se.ratio <- se_out/abs(beta_exp)#sqrt(se_out^2/beta_exp^2+beta_out^2*se_exp^2/beta_exp^4)
+#   dens <- .hetero_kde(beta.ratio, 2*se.ratio)
 #   beta.init <- dens$x[which.max(dens$y)]
-#
+#   print(beta.init)
+#   plot(dens$x, dens$y)
 #   lambda <- exp(seq(log(min(abs(beta_out-beta.init*beta_exp)/se_out^2)/n), log(quantile(abs(beta_out-beta.init*beta_exp)/se_out^2, 0.5)/n), length = nlam))
 #
 #   for (i in 1:dp) {
