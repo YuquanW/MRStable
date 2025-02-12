@@ -19,26 +19,22 @@ MRStable <- function(beta_exp,
                      se_exp,
                      se_out,
                      pi_thr = 0.6,
-                     rd = 20,
+                     rd = 50,
                      over.dispersion = T) {
   m <- length(beta_exp)
-  iv.sig1 <- .stablility_selection_stg1(beta_exp,
+  iv.sig <- .stablility_selection_stg1(beta_exp,
                                        se_exp,
                                        rd,
                                        pi_thr)
-  iv.sig2 <- .stablility_selection_stg1(beta_out,
-                                        se_out,
-                                        rd,
-                                        pi_thr)
-  iv.sig <- union(iv.sig1, iv.sig2)
   if (length(iv.sig)==0) {
     stop("No significant IVs were selected.")
   } else if (length(iv.sig) <= 10) {
     warning("The number of significant IVs is less than 10.")
   }
-  #t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
-  #beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
-  .divw(beta_exp, beta_out, se_exp, se_out, iv.sig, over.dispersion)
+  t <- min(abs(beta_exp)[iv.sig]/se_exp[iv.sig])
+  # t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
+  .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
 }
 
 #' @rdname MRStable
@@ -49,30 +45,28 @@ MRStable_V <- function(beta_exp,
                        se_exp,
                        se_out,
                        pi_thr = 0.6,
-                       rd = 20,
+                       rd = 50,
                        majority = F,
                        over.dispersion.stg1 = T,
                        over.dispersion.stg2 = T) {
   m <- length(beta_exp)
-  iv.sig1 <- .stablility_selection_stg1(beta_exp,
+  iv.sig <- .stablility_selection_stg1(beta_exp,
                                         se_exp,
                                         rd,
                                         pi_thr)
-  iv.sig2 <- .stablility_selection_stg1(beta_out,
-                                        se_out,
-                                        rd,
-                                        pi_thr)
-  iv.sig <- union(iv.sig1, iv.sig2)
-  #t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
-  #beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
+
+  t <- min(abs(beta_exp)[iv.sig]/se_exp[iv.sig])
+  # t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  # print(t)
+  beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   if (majority == T) {
-    iv.valid <- .stablility_selection_stg2_M(beta_exp,
+    iv.valid <- .stablility_selection_stg2_M(beta_exp_cor,
                                              beta_out,
                                              se_exp,
                                              se_out,
                                              iv.sig)
   } else {
-    iv.valid <- .stablility_selection_stg2_P(beta_exp,
+    iv.valid <- .stablility_selection_stg2_P(beta_exp_cor,
                                              beta_out,
                                              se_exp,
                                              se_out,
@@ -82,10 +76,10 @@ MRStable_V <- function(beta_exp,
   if (length(iv.valid)==0) {
 
     warning("No valid IVs were selected. Estimating causal effect with significant IVs.")
-    .divw(beta_exp, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1)
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1)
 
   } else {
-    .divw(beta_exp, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2)
+    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2)
   }
 }
 

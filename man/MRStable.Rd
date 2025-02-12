@@ -11,7 +11,7 @@ MRStable(
   se_exp,
   se_out,
   pi_thr = 0.6,
-  rd = 20,
+  rd = 50,
   over.dispersion = T
 )
 
@@ -21,7 +21,7 @@ MRStable_V(
   se_exp,
   se_out,
   pi_thr = 0.6,
-  rd = 20,
+  rd = 50,
   majority = F,
   over.dispersion.stg1 = T,
   over.dispersion.stg2 = T
