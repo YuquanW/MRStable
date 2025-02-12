@@ -31,7 +31,7 @@ MRStable <- function(beta_exp,
   } else if (length(iv.sig) <= 10) {
     warning("The number of significant IVs is less than 10.")
   }
-  t <- min(abs(beta_exp[iv.sig])/se_exp[iv.sig])#quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
 }
@@ -53,7 +53,7 @@ MRStable_V <- function(beta_exp,
                                        se_exp,
                                        rd,
                                        pi_thr)
-  t <- min(abs(beta_exp[iv.sig])/se_exp[iv.sig])#quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   if (majority == T) {
     iv.valid <- .stablility_selection_stg2_M(beta_exp_cor,
