@@ -1,19 +1,49 @@
-.stablility_selection_stg1 <- function(beta_exp, se_exp, rd, pi_thr) {
-  n <- min(1/se_exp^2)
-  nlam <- 10
-  lambda <- exp(seq(log(quantile(abs(beta_exp)/se_exp^2, 1-sqrt(0.5/length(beta_exp)))/n), log(max(abs(beta_exp)/se_exp^2)/n), length = nlam))
-  stab_sel <- matrix(NA, length(beta_exp), rd)
+.stablility_selection_stg1 <- function(beta, se, rd, pi_thr) {
+  n <- min(1/se^2)
+  nlam <- 20
+  lambda <- exp(seq(log(quantile(abs(beta)/se^2, 1-sqrt(0.5/length(beta)))/n), log(max(abs(beta)/se^2)/n), length = nlam))
+  stab_sel <- matrix(NA, length(beta), rd)
   for (i in 1:rd) {
-    beta_exp_lasso <- matrix(NA, length(beta_exp), nlam)
-    W <- runif(length(beta_exp), 0.5, 1)
-    beta_exp_dp <- beta_exp + rnorm(length(beta_exp))*se_exp
+    beta_lasso <- matrix(NA, length(beta), nlam)
+    W <- runif(length(beta), 0.75, 1)
+    beta_dp <- beta + rnorm(length(beta))*se
     for (j in 1:nlam) {
-      beta_exp_lasso[, j] <- (abs(beta_exp_dp)>n*lambda[j]*se_exp^2/W)*1
+      beta_lasso[, j] <- (abs(beta_dp)>n*lambda[j]*se^2/W)*1
     }
-    stab_sel[, i] <- apply(beta_exp_lasso, 1, max)
+    stab_sel[, i] <- apply(beta_lasso, 1, max)
   }
   which(rowMeans(stab_sel) > pi_thr)
 }
+
+# .stablility_selection_stg1 <- function(beta_exp, se_exp, rd, pi_thr) {
+#   n <- min(1/se_exp^2)
+#   nlam <- 100
+#   lambda <- exp(seq(log(quantile(abs(beta_exp)/se_exp^2, 0.1)/n), log(max(abs(beta_exp)/se_exp^2)/n), length = nlam))
+#   print(lambda[1])
+#   beta_exp_lasso <- matrix(NA, length(beta_exp), nlam)
+#   bic <- NULL
+#   for (j in 1:nlam) {
+#     beta_exp_lasso[, j] <- (abs(beta_exp) - n*lambda[j]*se_exp^2)*
+#       (abs(beta_exp)>n*lambda[j]*se_exp^2)*sign(beta_exp)
+#     bic <- c(bic, sum((beta_exp-beta_exp_lasso[, j])^2/se_exp^2)+log(n)*sum(beta_exp_lasso[, j]!=0))
+#   }
+#   beta_exp_lasso1 <- beta_exp_lasso[, which.min(bic)]
+#   plot(lambda, bic)
+#   #print(quantile(abs(beta_exp)*(abs(beta_exp_lasso1)+1e-16)/se_exp^2, 0.1)/n)
+#   lambda <- exp(seq(log(quantile(abs(beta_exp)*(abs(beta_exp_lasso1)+1e-16)/se_exp^2, 0.1)/n), log(max(abs(beta_exp)*(abs(beta_exp_lasso1)+1e-16)/se_exp^2)/n), length = nlam))
+#
+#   beta_exp_lasso <- matrix(NA, length(beta_exp), nlam)
+#   bic <- NULL
+#   for (j in 1:nlam) {
+#     beta_exp_lasso[, j] <- (abs(beta_exp) - n*lambda[j]*se_exp^2/(abs(beta_exp_lasso1)+1e-16))*
+#       (abs(beta_exp)>n*lambda[j]*se_exp^2/(abs(beta_exp_lasso1)+1e-16))*sign(beta_exp)
+#     bic <- c(bic, sum((beta_exp-beta_exp_lasso[, j])^2/se_exp^2)+log(n)*sum(beta_exp_lasso[, j]!=0))
+#   }
+#   plot(lambda, bic)
+#   #print(lambda[which.min(bic)])
+#   beta_exp_lasso2 <- beta_exp_lasso[, which.min(bic)]
+#   which(beta_exp_lasso2!=0)
+# }
 
 .g <- function(x, t) {
   (dnorm(t-x)-dnorm(t+x))/(pnorm(-t-x)+pnorm(-t+x))
