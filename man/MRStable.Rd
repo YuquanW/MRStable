@@ -10,7 +10,7 @@ MRStable(
   beta_out,
   se_exp,
   se_out,
-  pi_thr1 = 0.6,
+  pi_thr = 0.6,
   rd = 20,
   over.dispersion = T
 )
@@ -20,12 +20,11 @@ MRStable_V(
   beta_out,
   se_exp,
   se_out,
-  pi_thr1 = 0.6,
-  pi_thr2 = 0.6,
+  pi_thr = 0.6,
   rd = 20,
-  dp = 100,
+  majority = F,
   over.dispersion.stg1 = T,
-  over.dispersion.stg2 = F
+  over.dispersion.stg2 = T
 )
 }
 \arguments{
@@ -37,13 +36,11 @@ MRStable_V(
 
 \item{se_out}{Std error outcome}
 
-\item{pi_thr1}{Threshold 1}
+\item{pi_thr}{Threshold}
 
 \item{rd}{Randomized lasso}
 
 \item{over.dispersion}{Over dispersion}
-
-\item{pi_thr2}{Threshold 2}
 }
 \value{
 A list
