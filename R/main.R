@@ -4,8 +4,7 @@
 #' @param beta_out Outcome
 #' @param se_exp Std error exposure
 #' @param se_out Std error outcome
-#' @param pi_thr1 Threshold 1
-#' @param pi_thr2 Threshold 2
+#' @param pi_thr Threshold 
 #' @param rd Randomized lasso
 #' @param over.dispersion Over dispersion
 #'
@@ -19,20 +18,20 @@ MRStable <- function(beta_exp,
                      beta_out,
                      se_exp,
                      se_out,
-                     pi_thr1 = 0.6,
+                     pi_thr = 0.6,
                      rd = 20,
                      over.dispersion = T) {
   m <- length(beta_exp)
   iv.sig <- .stablility_selection_stg1(beta_exp,
                                        se_exp,
                                        rd,
-                                       pi_thr1)
+                                       pi_thr)
   if (length(iv.sig)==0) {
     stop("No significant IVs were selected.")
   } else if (length(iv.sig) <= 10) {
     warning("The number of significant IVs is less than 10.")
   }
-  t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  t <- min(abs(beta_exp[iv.sig])/se_exp[iv.sig])#quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
 }
@@ -54,7 +53,7 @@ MRStable_V <- function(beta_exp,
                                        se_exp,
                                        rd,
                                        pi_thr)
-  t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  t <- min(abs(beta_exp[iv.sig])/se_exp[iv.sig])#quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
   if (majority == T) {
     iv.valid <- .stablility_selection_stg2_M(beta_exp_cor,
