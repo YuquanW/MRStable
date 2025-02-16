@@ -76,10 +76,10 @@ MRStable_V <- function(beta_exp,
   if (length(iv.valid)==0) {
 
     warning("No valid IVs were selected. Estimating causal effect with significant IVs.")
-    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1)
+    list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1))
 
   } else {
-    .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2)
+    list(iv.valid, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2))
   }
 }
 
