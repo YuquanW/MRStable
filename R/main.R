@@ -32,9 +32,9 @@ MRStable <- function(beta_exp,
     warning("The number of significant IVs is less than 10.")
   }
   t <- min(abs(beta_exp)[iv.sig]/se_exp[iv.sig])
-  # t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
+  #t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
-  .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion)
+  list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion))
 }
 
 #' @rdname MRStable

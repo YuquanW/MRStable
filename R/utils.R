@@ -2,11 +2,11 @@
   n <- min(1/se^2)
   nlam <- 20
   lambda <- exp(seq(log(quantile(abs(beta)/se^2, 1-sqrt(0.5/length(beta)))/n), log(max(abs(beta)/se^2)/n), length = nlam))
-  print(quantile(abs(beta)/se^2, 1-sqrt(0.5/length(beta)))/n)
+  #print(quantile(abs(beta)/se^2, 1-sqrt(0.5/length(beta)))/n)
   stab_sel <- matrix(NA, length(beta), rd)
   for (i in 1:rd) {
     beta_lasso <- matrix(NA, length(beta), nlam)
-    W <- runif(length(beta), 0.5, 1)
+    W <- runif(length(beta), 0.9, 1)
     beta_dp <- beta + rnorm(length(beta), sd = 0.5)*se
     for (j in 1:nlam) {
       beta_lasso[, j] <- (abs(beta_dp)>n*lambda[j]*se^2/W)*1
@@ -201,7 +201,7 @@
   se.ratio <- sqrt(se_out^2/beta_exp^2+pmax(beta_out^2-se_out^2, 0)*se_exp^2/beta_exp^4)
   #se.ratio <- sqrt(se_out^2/pmax(beta_exp^2-se_exp^2, 1e-30))
   #print(density(beta.ratio)$x[which.max(density(beta.ratio)$y)])
-  dens <- .hetero_kde(beta.ratio, se.ratio)
+  dens <- .hetero_kde(beta.ratio, median(se.ratio))
   beta.init <- dens$x[which.max(dens$y)]
   #print(beta.init)
   alpha.init <- beta_out - beta.init*beta_exp
