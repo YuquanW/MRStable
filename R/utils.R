@@ -201,7 +201,7 @@
   se.ratio <- sqrt(se_out^2/beta_exp^2+pmax(beta_out^2-se_out^2, 0)*se_exp^2/beta_exp^4)
   #se.ratio <- sqrt(se_out^2/pmax(beta_exp^2-se_exp^2, 1e-30))
   #print(density(beta.ratio)$x[which.max(density(beta.ratio)$y)])
-  dens <- .hetero_kde(beta.ratio, median(se.ratio))
+  dens <- .hetero_kde(beta.ratio, se.ratio)
   beta.init <- dens$x[which.max(dens$y)]
   #print(beta.init)
   alpha.init <- beta_out - beta.init*beta_exp
