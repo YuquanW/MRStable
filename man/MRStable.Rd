@@ -3,6 +3,8 @@
 \name{MRStable}
 \alias{MRStable}
 \alias{MRStable_V}
+\alias{ldsc_divw}
+\alias{ada_ldsc_divw}
 \title{Title}
 \usage{
 MRStable(
@@ -25,6 +27,27 @@ MRStable_V(
   majority = F,
   over.dispersion.stg1 = T,
   over.dispersion.stg2 = T
+)
+
+ldsc_divw(
+  beta_exp,
+  beta_out,
+  se_exp,
+  se_out,
+  scale_exp,
+  scale_out,
+  over.dispersion = T
+)
+
+ada_ldsc_divw(
+  beta_exp,
+  beta_out,
+  se_exp,
+  se_out,
+  scale_exp,
+  scale_out,
+  n,
+  maxit = 10000
 )
 }
 \arguments{
