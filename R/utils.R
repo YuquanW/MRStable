@@ -232,18 +232,18 @@
   sig_iv[which(alpha_lasso[, which.min(bic)]==0)]
 }
 
-.divw <- function(beta_exp, beta_out, se_exp, se_out, ind, over.dispersion) {
-  beta.hat <- sum(beta_exp[ind] * beta_out[ind]/(se_out[ind])^2)/
-    sum((beta_exp[ind]^2 - se_exp[ind]^2)/(se_out[ind])^2)
-  se.ratio <- se_exp[ind]/se_out[ind]
-  mu <- beta_exp[ind]/se_exp[ind]
+.divw <- function(beta_exp, beta_out, se_exp, se_out, over.dispersion) {
+  beta.hat <- sum(beta_exp * beta_out/(se_out)^2)/
+    sum((beta_exp^2 - se_exp^2)/(se_out)^2)
+  se.ratio <- se_exp/se_out
+  mu <- beta_exp/se_exp
   tau.square <- 0
   if (over.dispersion) {
-    tau.square <- max(sum(((beta_out[ind] - beta.hat * beta_exp[ind])^2 - se_exp[ind]^2 - beta.hat^2 * se_exp[ind]^2)/se_out[ind]^2)/
-      sum(se_out[ind]^(-2)), 0)
+    tau.square <- max(sum(((beta_out - beta.hat * beta_exp)^2 - se_exp^2 - beta.hat^2 * se_exp^2)/se_out^2)/
+      sum(se_out^(-2)), 0)
   }
   V1 <- sum(se.ratio^2 * mu^2 + beta.hat^2 * se.ratio^4 *
-              (mu^2 + 1) + tau.square * se.ratio^2/se_out[ind]^2 *
+              (mu^2 + 1) + tau.square * se.ratio^2/se_out^2 *
               mu^2)
   V2 <- sum(se.ratio^2 * (mu^2 - 1))
   beta.var <- V1/V2^2
