@@ -96,63 +96,37 @@ ldsc_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, 
 #' @rdname MRStable
 #' @export
 
-ada_ldsc_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n, over.dispersion = F, maxit = 10000) {
+function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out,
+          n, maxit = 10000)
+{
   m <- length(beta_exp)
-  #nlam <- 1#50
-  se_exp <- sqrt(scale_exp)*se_exp
-  se_out <- sqrt(scale_out*se_out^2)
-  divw.init <- ldsc_divw(beta_exp, beta_out, se_exp, se_out, 1, 1)
-  beta.hat <- beta.init <- divw.init$beta.hat
-  #beta.se <- divw.init$beta.se
-  alpha.init <- beta_out - beta.init*beta_exp
-  w <- 1/(abs(alpha.init)^2+1e-16)
-  # lambda <- exp(seq(-log(n)/3,
-  #                   log(n)/3,
-  #                   length.out = nlam))
+  se_exp <- sqrt(scale_exp) * se_exp
+  se_out <- sqrt(scale_out) * se_out
+  divw.init <- ldsc_divw(beta_exp, beta_out, se_exp, se_out,
+                         1, 1)
+  beta.init <- divw.init$beta.hat
+  alpha.init <- beta_out - beta.init * beta_exp
+  w <- 1/(abs(alpha.init)^2 + 1e-16)
   lambda <- 1
-  #bic <- NULL
-  # alpha.all <- matrix(0, m, nlam)
-  # for (i in 1:nlam) {
-  #   beta.hat <- beta.init
-  #   gamma <- rep(0, m)
-  #   for (j in 1:maxit) {
-  #     beta.old <- beta.hat
-  #     alpha.hat <- (abs(beta_out-beta.old*gamma)-lambda[i]*w*se_out^2)*
-  #       (abs(beta_out-beta.old*gamma)>lambda[i]*w*se_out^2)*
-  #       sign(beta_out-beta.old*gamma)
-  #     gamma <- (beta.old*(beta_out-alpha.hat)/se_out^2+beta_exp/se_exp^2)/(beta.old^2/se_out^2+1/se_exp^2)
-  #     beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)#opt$minimum
-  #     if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
-  #       break
-  #     }
-  #   }
-    # bic <- c(bic, sum((beta_out-beta.hat*gamma)^2/se_out^2 + (beta_exp-gamma)^2/se_exp^2)
-    #          +log(n)*sum(alpha.hat!=0))
-    #alpha.all[, i] <- alpha.hat
-  #}
-  #lambda.final <- lambda[which.min(bic)]
   gamma <- rep(0, m)
   for (i in 1:maxit) {
     beta.old <- beta.hat
-    alpha.hat <- (abs(beta_out-beta.old*gamma)-lambda*w*se_out^2)*
-      (abs(beta_out-beta.old*gamma)>lambda*w*se_out^2)*
-      sign(beta_out-beta.old*gamma)
-    gamma <- (beta.old*(beta_out-alpha.hat)/se_out^2+beta_exp/se_exp^2)/(beta.old^2/se_out^2+1/se_exp^2)
-    beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)#opt$minimum
-    if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
+    alpha.hat <- (abs(beta_out - beta.old * gamma) - lambda * w * se_out^2) *
+      (abs(beta_out - beta.old * gamma) > lambda * w * se_out^2) *
+      sign(beta_out - beta.old * gamma)
+    gamma <- (beta.old * (beta_out - alpha.hat)/se_out^2 +
+                beta_exp/se_exp^2)/(beta.old^2/se_out^2 + 1/se_exp^2)
+    beta.hat <- sum((beta_out - alpha.hat) * gamma/se_out^2)/sum(gamma^2/se_out^2)
+    if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-07) {
       break
     }
   }
-  iv.valid <- which(alpha.hat==0)
-  divw.res <- ldsc_divw(beta_exp[iv.valid],
-                        beta_out[iv.valid],
-                        se_exp[iv.valid],
-                        se_out[iv.valid], 1, 1,
-                        over.dispersion = over.dispersion)
-  list(beta.hat = divw.res$beta.hat,
-       beta.se = divw.res$beta.se,
+  iv.valid <- which(alpha.hat == 0)
+  divw.res <- ldsc_divw(beta_exp[iv.valid], beta_out[iv.valid],
+                        se_exp[iv.valid], se_out[iv.valid], 1, 1)
+  list(beta.hat = divw.res$beta.hat, beta.se = divw.res$beta.se,
        beta.p.value = divw.res$beta.p.value,
-       iv.invalid = which(alpha.hat!=0))
+       iv.invalid = which(alpha.hat != 0))
 }
 
 #' @rdname MRStable
@@ -197,7 +171,6 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
     bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
     alpha.all[, i] <- alpha.hat
   }
-  plot(lambda, bic)
   lambda.final <- lambda[which.min(bic)]
   alpha.final <- alpha.all[, which.min(bic)]
   iv.valid <- which(alpha.final==0)
