@@ -5,6 +5,7 @@
 \alias{MRStable_V}
 \alias{ldsc_divw}
 \alias{ada_ldsc_divw}
+\alias{ldsc_mcp_divw}
 \title{Title}
 \usage{
 MRStable(
@@ -36,7 +37,7 @@ ldsc_divw(
   se_out,
   scale_exp,
   scale_out,
-  over.dispersion = T
+  over.dispersion = F
 )
 
 ada_ldsc_divw(
@@ -47,6 +48,18 @@ ada_ldsc_divw(
   scale_exp,
   scale_out,
   n,
+  maxit = 10000
+)
+
+ldsc_mcp_divw(
+  beta_exp,
+  beta_out,
+  se_exp,
+  se_out,
+  scale_exp,
+  scale_out,
+  n,
+  a = 3,
   maxit = 10000
 )
 }

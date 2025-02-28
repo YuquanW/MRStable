@@ -34,7 +34,7 @@ MRStable <- function(beta_exp,
   t <- min(abs(beta_exp)[iv.sig]/se_exp[iv.sig])
   #t <- quantile(abs(beta_exp)/se_exp, 1-sqrt(0.5/m))
   beta_exp_cor <- .fix_point(beta_exp, se_exp, iv.sig, t)
-  list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion))
+  list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, over.dispersion))
 }
 
 #' @rdname MRStable
@@ -76,10 +76,10 @@ MRStable_V <- function(beta_exp,
   if (length(iv.valid)==0) {
 
     warning("No valid IVs were selected. Estimating causal effect with significant IVs.")
-    list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.sig, over.dispersion.stg1))
+    list(iv.sig, .divw(beta_exp_cor, beta_out, se_exp, se_out, over.dispersion.stg1))
 
   } else {
-    list(iv.valid, .divw(beta_exp_cor, beta_out, se_exp, se_out, iv.valid, over.dispersion.stg2))
+    list(iv.valid, .divw(beta_exp_cor, beta_out, se_exp, se_out, over.dispersion.stg2))
   }
 }
 
