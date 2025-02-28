@@ -96,7 +96,7 @@ ldsc_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, 
 #' @rdname MRStable
 #' @export
 
-function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out,
+ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out,
           n, maxit = 10000)
 {
   m <- length(beta_exp)
