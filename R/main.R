@@ -132,16 +132,19 @@ ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_
 #' @rdname MRStable
 #' @export
 
-ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n, a = 3, maxit = 10000) {
+ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
+                          a = 3, maxit = 10000, over.dispersion = F, check.invalid = F) {
   m <- length(beta_exp)
-  nlam <- 50
+  nlam <- 100
   se_exp <- sqrt(scale_exp)*se_exp
   se_out <- sqrt(scale_out)*se_out
   divw.init <- ldsc_divw(beta_exp, beta_out, se_exp, se_out, 1, 1)
   beta.init <- divw.init$beta.hat
+  beta.se.init <- divw.init$beta.se
   alpha.init <- beta_out - beta.init*beta_exp
-  ny <- min(1/se_out^2)
-  lambda <- exp(seq(-0.5*log(n), 0, length.out = nlam))
+  n <- max(n_exp, n_out)
+  lambda <- exp(seq(-0.5*log(n), -0.05*log(n), length.out = nlam))
+  n <- min(n_exp, n_out)
   bic <- NULL
   alpha.all <- matrix(0, m, nlam)
   for (i in 1:nlam) {
@@ -150,13 +153,17 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
     for (j in 1:maxit) {
       beta.old <- beta.hat
       gamma <- (beta.old*(beta_out-alpha.hat)/se_out^2+beta_exp/se_exp^2)/(beta.old^2/se_out^2+1/se_exp^2)
-      alpha.hat <- (abs(beta_out-beta.old*gamma)-ny*lambda[i]*se_out^2)*
-        (abs(beta_out-beta.old*gamma)>ny*lambda[i]*se_out^2)*
-        (abs(beta_out-beta.old*gamma)<=a*lambda[i])*
-        sign(beta_out-beta.old*gamma)/
-        (1-ny/a*se_out^2)+
+      alpha.hat <- (abs(beta_out-beta.old*gamma)-lambda[i])*
+        (abs(beta_out-beta.old*gamma)>lambda[i])*
+        sign(beta_out-beta.old*gamma)*
+        (abs(beta_out-beta.old*gamma)<=a*lambda[i])/
+        (1-1/a)+
         (beta_out-beta.old*gamma)*(abs(beta_out-beta.old*gamma)>a*lambda[i])
       beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)
+      if (beta.hat > beta.init + 10*beta.se.init | beta.hat < beta.init - 10*beta.se.init) {
+        beta.hat <- (beta.init + 10*beta.se.init)*(beta.hat > beta.init + 10*beta.se.init)+
+          (beta.init - 10*beta.se.init)*(beta.hat < beta.init - 10*beta.se.init)
+      }
       if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
         break
       }
@@ -166,7 +173,9 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
       sum((beta_out[valid.iv] - beta*beta_exp[valid.iv])^2/
             (beta^2*se_exp[valid.iv]^2+se_out[valid.iv]^2))
     }
-    sol <- optim(beta.init, fn_beta, method = "BFGS")
+    sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
+                 lower = beta.init - 10*beta.se.init,
+                 upper = beta.init + 10*beta.se.init)
     ll <- sol$value
     bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
     alpha.all[, i] <- alpha.hat
@@ -177,10 +186,21 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
   divw.res <- ldsc_divw(beta_exp[iv.valid],
                         beta_out[iv.valid],
                         se_exp[iv.valid],
-                        se_out[iv.valid], 1, 1)
+                        se_out[iv.valid], 1, 1,
+                        over.dispersion)
+  if (check.invalid == T) {
+    plot(beta_exp[iv.valid], beta_out[iv.valid],
+         xlab = "IV-exposure association",
+         ylab = "IV-outcome association",
+         pch = 16,
+         ylim = c(min(beta_out), max(beta_out)))
+    points(beta_exp[-iv.valid], beta_out[-iv.valid],
+           pch = 16, col = "red")
+  }
   list(beta.hat = divw.res$beta.hat,
        beta.se = divw.res$beta.se,
        beta.p.value = divw.res$beta.p.value,
+       lambda = lambda.final,
        iv.invalid = which(alpha.final!=0))
 }
 
