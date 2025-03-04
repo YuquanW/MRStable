@@ -135,16 +135,17 @@ ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_
 ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
                           a = 3, maxit = 10000, over.dispersion = F, check.invalid = F) {
   m <- length(beta_exp)
-  nlam <- 100
+  nlam <- 50
+  ny <- min(n_out)
+  lambda <- exp(seq(-0.5*log(ny), -0.05*log(ny), length.out = nlam))
+  n <- min(n_exp, n_out)
+  bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
   se_exp <- sqrt(scale_exp)*se_exp
   se_out <- sqrt(scale_out)*se_out
   divw.init <- ldsc_divw(beta_exp, beta_out, se_exp, se_out, 1, 1)
   beta.init <- divw.init$beta.hat
-  beta.se.init <- divw.init$beta.se
   alpha.init <- beta_out - beta.init*beta_exp
-  n <- max(n_exp, n_out)
-  lambda <- exp(seq(-0.5*log(n), -0.05*log(n), length.out = nlam))
-  n <- min(n_exp, n_out)
+
   bic <- NULL
   alpha.all <- matrix(0, m, nlam)
   for (i in 1:nlam) {
@@ -160,9 +161,10 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
         (1-1/a)+
         (beta_out-beta.old*gamma)*(abs(beta_out-beta.old*gamma)>a*lambda[i])
       beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)
-      if (beta.hat > beta.init + 10*beta.se.init | beta.hat < beta.init - 10*beta.se.init) {
-        beta.hat <- (beta.init + 10*beta.se.init)*(beta.hat > beta.init + 10*beta.se.init)+
-          (beta.init - 10*beta.se.init)*(beta.hat < beta.init - 10*beta.se.init)
+
+      if (beta.hat > beta.init + 10*bound | beta.hat < beta.init - 10*bound) {
+        beta.hat <- (beta.init + 10*bound)*(beta.hat > beta.init + 10*bound)+
+          (beta.init - 10*bound)*(beta.hat < beta.init - 10*bound)
       }
       if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
         break
@@ -174,8 +176,8 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
             (beta^2*se_exp[valid.iv]^2+se_out[valid.iv]^2))
     }
     sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
-                 lower = beta.init - 10*beta.se.init,
-                 upper = beta.init + 10*beta.se.init)
+                 lower = beta.init - 10*sqrt(m/ny),
+                 upper = beta.init + 10*sqrt(m/ny))
     ll <- sol$value
     bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
     alpha.all[, i] <- alpha.hat
