@@ -239,7 +239,7 @@
   mu <- beta_exp/se_exp
   tau.square <- 0
   if (over.dispersion) {
-    tau.square <- max(sum(((beta_out - beta.hat * beta_exp)^2 - se_exp^2 - beta.hat^2 * se_exp^2)/se_out^2)/
+    tau.square <- max(sum(((beta_out - beta.hat * beta_exp)^2 - se_out^2 - beta.hat^2 * se_exp^2)/se_out^2)/
       sum(se_out^(-2)), 0)
   }
   V1 <- sum(se.ratio^2 * mu^2 + beta.hat^2 * se.ratio^4 *
