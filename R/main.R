@@ -86,16 +86,6 @@ MRStable_V <- function(beta_exp,
 #' @rdname MRStable
 #' @export
 
-ldsc_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, over.dispersion = F) {
-  m <- length(beta_exp)
-  se_exp <- sqrt(scale_exp)*se_exp
-  se_out <- sqrt(scale_out*se_out^2)
-  .divw(beta_exp, beta_out, se_exp, se_out, over.dispersion)
-}
-
-#' @rdname MRStable
-#' @export
-
 ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out,
           n, maxit = 10000)
 {
@@ -132,18 +122,18 @@ ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_
 #' @rdname MRStable
 #' @export
 
-ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
-                          a = 3, maxit = 10000, over.dispersion = F, check.invalid = F) {
+ldsc_mcp_ps <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
+                          a = 3, maxit = 10000, check.invalid = F) {
   m <- length(beta_exp)
   nlam <- 50
   ny <- min(n_out)
   lambda <- exp(seq(-0.5*log(ny), -0.05*log(ny), length.out = nlam))
   n <- min(n_exp, n_out)
   bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
-  se_exp <- sqrt(scale_exp)*se_exp
-  se_out <- sqrt(scale_out)*se_out
-  divw.init <- ldsc_divw(beta_exp, beta_out, se_exp, se_out, 1, 1)
-  beta.init <- divw.init$beta.hat
+  se_exp <- sqrt(scale_exp*se_exp^2)
+  se_out <- sqrt(scale_out*se_out^2)
+  ps.init <- mr.raps::mr.raps.overdispersed(beta_exp, beta_out, se_exp, se_out)
+  beta.init <- ps.init$beta.hat
   alpha.init <- beta_out - beta.init*beta_exp
 
   bic <- NULL
@@ -185,11 +175,89 @@ ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_o
   lambda.final <- lambda[which.min(bic)]
   alpha.final <- alpha.all[, which.min(bic)]
   iv.valid <- which(alpha.final==0)
-  divw.res <- ldsc_divw(beta_exp[iv.valid],
+  divw.res <- mr.raps::mr.raps.simple(beta_exp,
+                                      beta_out,
+                                      se_exp,
+                                      se_out)
+  if (check.invalid == T) {
+    plot(beta_exp[iv.valid], beta_out[iv.valid],
+         xlab = "IV-exposure association",
+         ylab = "IV-outcome association",
+         pch = 16,
+         ylim = c(min(beta_out), max(beta_out)))
+    points(beta_exp[-iv.valid], beta_out[-iv.valid],
+           pch = 16, col = "red")
+  }
+  list(beta.hat = divw.res$beta.hat,
+       beta.se = divw.res$beta.se,
+       beta.p.value = divw.res$beta.p.value,
+       lambda = lambda.final,
+       iv.invalid = which(alpha.final!=0))
+}
+#' @rdname MRStable
+#' @export
+ldsc_mcp_ps_overdispersed <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
+                          a = 3, maxit = 10000, check.invalid = F) {
+  m <- length(beta_exp)
+  nlam <- 50
+  ny <- min(n_out)
+  lambda <- exp(seq(-0.5*log(ny), -0.05*log(ny), length.out = nlam))
+  n <- min(n_exp, n_out)
+  bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
+  se_exp <- sqrt(scale_exp*se_exp^2)
+  se_out <- sqrt(scale_out*se_out^2)
+  aps.init <- mr.raps::mr.raps.overdispersed(beta_exp,
+                                             beta_out,
+                                             se_exp,
+                                             se_out)
+  beta.init <- aps.init$beta.hat
+  alpha.init <- beta_out - beta.init*beta_exp
+  tau2.hat <- aps.init$tau2.hat
+  se_out <- sqrt(se_out^2+tau2.hat)
+
+  bic <- NULL
+  alpha.all <- matrix(0, m, nlam)
+  for (i in 1:nlam) {
+    beta.hat <- beta.init
+    alpha.hat <- alpha.init
+    for (j in 1:maxit) {
+      beta.old <- beta.hat
+      gamma <- (beta.old*(beta_out-alpha.hat)/se_out^2+beta_exp/se_exp^2)/(beta.old^2/se_out^2+1/se_exp^2)
+      alpha.hat <- (abs(beta_out-beta.old*gamma)-lambda[i])*
+        (abs(beta_out-beta.old*gamma)>lambda[i])*
+        sign(beta_out-beta.old*gamma)*
+        (abs(beta_out-beta.old*gamma)<=a*lambda[i])/
+        (1-1/a)+
+        (beta_out-beta.old*gamma)*(abs(beta_out-beta.old*gamma)>a*lambda[i])
+      beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)
+
+      if (beta.hat > beta.init + 10*bound | beta.hat < beta.init - 10*bound) {
+        beta.hat <- (beta.init + 10*bound)*(beta.hat > beta.init + 10*bound)+
+          (beta.init - 10*bound)*(beta.hat < beta.init - 10*bound)
+      }
+      if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
+        break
+      }
+    }
+    valid.iv <- which(alpha.hat==0)
+    fn_beta <- function(beta) {
+      sum((beta_out[valid.iv] - beta*beta_exp[valid.iv])^2/
+            (beta^2*se_exp[valid.iv]^2+se_out[valid.iv]^2))
+    }
+    sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
+                 lower = beta.init - 10*sqrt(m/ny),
+                 upper = beta.init + 10*sqrt(m/ny))
+    ll <- sol$value
+    bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
+    alpha.all[, i] <- alpha.hat
+  }
+  lambda.final <- lambda[which.min(bic)]
+  alpha.final <- alpha.all[, which.min(bic)]
+  iv.valid <- which(alpha.final==0)
+  divw.res <- mr.raps::mr.raps.overdispersed(beta_exp[iv.valid],
                         beta_out[iv.valid],
                         se_exp[iv.valid],
-                        se_out[iv.valid], 1, 1,
-                        over.dispersion)
+                        se_out[iv.valid])
   if (check.invalid == T) {
     plot(beta_exp[iv.valid], beta_out[iv.valid],
          xlab = "IV-exposure association",

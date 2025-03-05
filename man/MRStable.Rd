@@ -3,9 +3,9 @@
 \name{MRStable}
 \alias{MRStable}
 \alias{MRStable_V}
-\alias{ldsc_divw}
 \alias{ada_ldsc_divw}
-\alias{ldsc_mcp_divw}
+\alias{ldsc_mcp_ps}
+\alias{ldsc_mcp_ps_overdispersed}
 \title{Title}
 \usage{
 MRStable(
@@ -30,16 +30,6 @@ MRStable_V(
   over.dispersion.stg2 = T
 )
 
-ldsc_divw(
-  beta_exp,
-  beta_out,
-  se_exp,
-  se_out,
-  scale_exp,
-  scale_out,
-  over.dispersion = F
-)
-
 ada_ldsc_divw(
   beta_exp,
   beta_out,
@@ -51,16 +41,32 @@ ada_ldsc_divw(
   maxit = 10000
 )
 
-ldsc_mcp_divw(
+ldsc_mcp_ps(
   beta_exp,
   beta_out,
   se_exp,
   se_out,
   scale_exp,
   scale_out,
-  n,
+  n_exp,
+  n_out,
   a = 3,
-  maxit = 10000
+  maxit = 10000,
+  check.invalid = F
+)
+
+ldsc_mcp_ps_overdispersed(
+  beta_exp,
+  beta_out,
+  se_exp,
+  se_out,
+  scale_exp,
+  scale_out,
+  n_exp,
+  n_out,
+  a = 3,
+  maxit = 10000,
+  check.invalid = F
 )
 }
 \arguments{
