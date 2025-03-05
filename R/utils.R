@@ -250,7 +250,8 @@
   beta.se <- sqrt(beta.var)
   list(beta.hat = beta.hat,
        beta.se = beta.se,
-       beta.p.value = 2*pnorm(-abs(beta.hat)/beta.se))
+       beta.p.value = 2*pnorm(-abs(beta.hat)/beta.se),
+       tau2.hat = tau.square)
 }
 
 .hetero_kde <- function(beta, se, res = 1000) {

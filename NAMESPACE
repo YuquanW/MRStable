@@ -3,5 +3,5 @@
 export(MRStable)
 export(MRStable_V)
 export(ada_ldsc_divw)
-export(ldsc_mcp_ps)
-export(ldsc_mcp_ps_overdispersed)
+export(ldsc_mcp_divw)
+export(ldsc_mcp_divw_od)

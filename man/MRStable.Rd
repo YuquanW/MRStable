@@ -4,8 +4,8 @@
 \alias{MRStable}
 \alias{MRStable_V}
 \alias{ada_ldsc_divw}
-\alias{ldsc_mcp_ps}
-\alias{ldsc_mcp_ps_overdispersed}
+\alias{ldsc_mcp_divw}
+\alias{ldsc_mcp_divw_od}
 \title{Title}
 \usage{
 MRStable(
@@ -41,7 +41,7 @@ ada_ldsc_divw(
   maxit = 10000
 )
 
-ldsc_mcp_ps(
+ldsc_mcp_divw(
   beta_exp,
   beta_out,
   se_exp,
@@ -55,7 +55,7 @@ ldsc_mcp_ps(
   check.invalid = F
 )
 
-ldsc_mcp_ps_overdispersed(
+ldsc_mcp_divw_od(
   beta_exp,
   beta_out,
   se_exp,
