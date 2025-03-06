@@ -122,19 +122,25 @@ ada_ldsc_divw <- function (beta_exp, beta_out, se_exp, se_out, scale_exp, scale_
 #' @rdname MRStable
 #' @export
 
-ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out,
+ldsc_mcp_divw <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scale_out, n_exp, n_out, bound = "adaptive",
                           a = 3, maxit = 10000, check.invalid = F) {
   m <- length(beta_exp)
   nlam <- 50
   ny <- min(n_out)
   lambda <- exp(seq(-0.5*log(ny), -0.05*log(ny), length.out = nlam))
   n <- min(n_exp, n_out)
-  bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
   se_exp <- sqrt(scale_exp*se_exp^2)
   se_out <- sqrt(scale_out*se_out^2)
-  ps.init <- .divw(beta_exp, beta_out, se_exp, se_out,F)
-  beta.init <- ps.init$beta.hat
-  alpha.init <- beta_out - beta.init*beta_exp
+  if (bound == "adaptive") {
+    ps.init <- .divw(beta_exp, beta_out, se_exp, se_out,F)
+    beta.init <- ps.init$beta.hat
+    alpha.init <- beta_out - beta.init*beta_exp
+    bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
+  } else {
+    beta.init <- 0
+    alpha.init <- beta_out - beta.init*beta_exp
+    bound <- 0.1
+  }
 
   bic <- NULL
   alpha.all <- matrix(0, m, nlam)
