@@ -252,7 +252,7 @@ ldsc_mcp_divw_od <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scal
     # sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
     #              lower = beta.init - 10*bound,
     #              upper = beta.init + 10*bound)
-    ll <- sol$f
+    ll <- sol$objective
     bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
     alpha.all[, i] <- alpha.hat
   }
