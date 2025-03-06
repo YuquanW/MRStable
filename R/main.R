@@ -206,7 +206,7 @@ ldsc_mcp_divw_od <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scal
   ny <- min(n_out)
   lambda <- exp(seq(-0.5*log(ny), -0.05*log(ny), length.out = nlam))
   n <- min(n_exp, n_out)
-  bound <- sqrt(1/n)/sqrt(sum(beta_exp^2-se_exp^2))
+  bound <- sqrt(m/n)/sqrt(sum(beta_exp^2))
   se_exp <- sqrt(scale_exp*se_exp^2)
   se_out <- sqrt(scale_out*se_out^2)
   aps.init <- .divw(beta_exp,
@@ -235,10 +235,10 @@ ldsc_mcp_divw_od <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scal
         (beta_out-beta.old*gamma)*(abs(beta_out-beta.old*gamma)>a*lambda[i])
       beta.hat <- sum((beta_out-alpha.hat)*gamma/se_out^2)/sum(gamma^2/se_out^2)
 
-      if (beta.hat > beta.init + 10*bound | beta.hat < beta.init - 10*bound) {
-        beta.hat <- (beta.init + 10*bound)*(beta.hat > beta.init + 10*bound)+
-          (beta.init - 10*bound)*(beta.hat < beta.init - 10*bound)
-      }
+      # if (beta.hat > beta.init + 10*bound | beta.hat < beta.init - 10*bound) {
+      #   beta.hat <- (beta.init + 10*bound)*(beta.hat > beta.init + 10*bound)+
+      #     (beta.init - 10*bound)*(beta.hat < beta.init - 10*bound)
+      # }
       if (abs(beta.hat - beta.old)/abs(beta.old) < 1e-7) {
         break
       }
@@ -248,10 +248,11 @@ ldsc_mcp_divw_od <- function(beta_exp, beta_out, se_exp, se_out, scale_exp, scal
       sum((beta_out[valid.iv] - beta*beta_exp[valid.iv])^2/
             (beta^2*se_exp[valid.iv]^2+se_out[valid.iv]^2))
     }
-    sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
-                 lower = beta.init - 10*bound,
-                 upper = beta.init + 10*bound)
-    ll <- sol$value
+    sol <- optimize(fn_beta, lower = beta.hat - 10*bound, upper = beta.hat + 10*bound)
+    # sol <- optim(beta.init, fn_beta, method = "L-BFGS-B",
+    #              lower = beta.init - 10*bound,
+    #              upper = beta.init + 10*bound)
+    ll <- sol$f
     bic <- c(bic, ll+log(n)*sum(alpha.hat!=0))
     alpha.all[, i] <- alpha.hat
   }
